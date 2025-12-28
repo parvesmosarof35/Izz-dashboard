@@ -9,38 +9,30 @@ import {
   YAxis,
 } from "recharts";
 
-const demoData = [
-  { month: "Jan", videoView: 50 },
-  { month: "Feb", videoView: 70 },
-  { month: "Mar", videoView: 60 },
-  { month: "Apr", videoView: 80 },
-  { month: "May", videoView: 90 },
-  { month: "Jun", videoView: 75 },
-  { month: "Jul", videoView: 85 },
-  { month: "Aug", videoView: 95 },
-  { month: "Sep", videoView: 70 },
-  { month: "Oct", videoView: 80 },
-  { month: "Nov", videoView: 100 },
-  { month: "Dec", videoView: 110 },
-];
-
-const maxTrainerCount = Math.max(...demoData.map((item) => item.trainer), 100);
-
-const CustomTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const { month, videoView } = payload[0].payload;
-    return (
-      <div className="bg-white shadow-md p-3 rounded-md border text-gray-700">
-        <p className="font-medium">Month: {month}</p>
-        <p className="font-medium">Trainers: {videoView}</p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const TotalView = () => {
+const TotalView = ({ userChart = [] }) => {
   const [chartHeight, setChartHeight] = useState(220);
+
+  // Transform API data to chart format
+  const chartData = userChart.map(item => ({
+    month: item.month,
+    videoView: item.count,
+  }));
+
+  // Calculate max value for YAxis domain
+  const maxCount = Math.max(...chartData.map(item => item.videoView), 100);
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const { month, videoView } = payload[0].payload;
+      return (
+        <div className="bg-white shadow-md p-3 rounded-md border text-gray-700">
+          <p className="font-medium">Month: {month}</p>
+          <p className="font-medium">Users: {videoView}</p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -58,11 +50,12 @@ const TotalView = () => {
 
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
   return (
     <div>
       <ResponsiveContainer width="100%" height={chartHeight}>
         <BarChart
-          data={demoData}
+          data={chartData}
           margin={{
             top: 0,
             right: 0,
@@ -73,7 +66,7 @@ const TotalView = () => {
           <XAxis tickLine={false} dataKey="month" className="text-gray-600" />
           <YAxis
             tickLine={false}
-            domain={[0, maxTrainerCount + 10]}
+            domain={[0, maxCount + 10]}
             className="text-gray-600"
           />
           <Tooltip content={<CustomTooltip />} />

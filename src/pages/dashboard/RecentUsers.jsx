@@ -1,56 +1,16 @@
-import { ConfigProvider, Modal, Table } from "antd";
-import { FaRegEye } from "react-icons/fa";
-import { FiEdit2 } from "react-icons/fi";
-import { MdBlock } from "react-icons/md";
+import { ConfigProvider, Table } from "antd";
+import PropTypes from "prop-types";
 
-const RecentUsers = () => {
-  const dataSource = [
-    {
-      key: "1",
-      fullName: "John Doe",
-      role: "Dentist",
-      clinic: "Downtown Dental Clinic",
-      email: "john@example.com",
-      phone: "+1 987 654 3210",
-      joined: "2024-01-12",
-    },
-    {
-      key: "2",
-      fullName: "Emma Smith",
-      role: "Practice Nurse",
-      clinic: "Smile Care Clinic",
-      email: "emma@example.com",
-      phone: "+1 987 654 3211",
-      joined: "2024-03-28",
-    },
-    {
-      key: "3",
-      fullName: "Liam Johnson",
-      role: "Practice Manager",
-      clinic: "Healthy Teeth Clinic",
-      email: "liam@example.com",
-      phone: "+1 987 654 3212",
-      joined: "2024-06-15",
-    },
-    {
-      key: "4",
-      fullName: "Olivia Brown",
-      role: "Lab Technician",
-      clinic: "City Dental Center",
-      email: "olivia@example.com",
-      phone: "+1 987 654 3213",
-      joined: "2024-08-02",
-    },
-    {
-      key: "5",
-      fullName: "Noah Davis",
-      role: "Lab Manager",
-      clinic: "Prime Smiles",
-      email: "noah@example.com",
-      phone: "+1 987 654 3214",
-      joined: "2024-09-10",
-    },
-  ];
+const RecentUsers = ({ recentUsers = [] }) => {
+  const dataSource = recentUsers.slice(0, 10).map((user) => ({
+    key: user.id,
+    fullName: user.fullName,
+    email: user.email,
+    phone: "N/A", // API doesn't provide phone
+    joined: new Date(user.createdAt).toLocaleDateString(),
+    profileImage: user.profileImage,
+    status: user.status,
+  }));
 
   const columns = [
     {
@@ -66,7 +26,9 @@ const RecentUsers = () => {
       render: (value, record) => (
         <div className="flex items-center gap-3">
           <img
-            src={`https://avatar.iran.liara.run/public/${record.key}`}
+            src={
+              record.profileImage || "https://avatar.iran.liara.run/public/44"
+            }
             className="w-10 h-10 object-cover rounded-full"
             alt="User Avatar"
           />
@@ -74,11 +36,25 @@ const RecentUsers = () => {
         </div>
       ),
     },
-    // { title: "Role", dataIndex: "role", key: "role" },
-    // { title: "Clinic", dataIndex: "clinic", key: "clinic" },
     { title: "Email", dataIndex: "email", key: "email" },
     { title: "Phone No", dataIndex: "phone", key: "phone" },
     { title: "Joined Date", dataIndex: "joined", key: "joined" },
+    {
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
+      render: (status) => (
+        <span
+          className={`px-2 py-1 rounded text-xs font-semibold ${
+            status === "ACTIVE"
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {status}
+        </span>
+      ),
+    },
   ];
 
   return (
@@ -108,6 +84,10 @@ const RecentUsers = () => {
       </ConfigProvider>
     </>
   );
+};
+
+RecentUsers.propTypes = {
+  recentUsers: PropTypes.array,
 };
 
 export default RecentUsers;
