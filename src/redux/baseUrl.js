@@ -5,6 +5,6 @@ export const baseApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: "https://sports-izz-122-backend.onrender.com/api/v1",
   }),
-  tagTypes: ['User'],
+  tagTypes: ['User', 'Category'],
   endpoints: () => ({}),
 });
