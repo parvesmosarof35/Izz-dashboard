@@ -23,6 +23,7 @@ import Earnings from "../pages/Earnings/Earnings";
 import Coupon from "../pages/Coupon/Coupon";
 import Gamification from "../pages/Gamification/Gamification";
 import Categories from "../pages/Categories/Categories";
+// import PrivateRoute from "./PrivateRoute";
 
 const router = createBrowserRouter([
   {
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
+    // element: <PrivateRoute><MainLayout /></PrivateRoute>,
     children: [
       {
         path: "/",

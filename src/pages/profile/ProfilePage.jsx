@@ -1,13 +1,64 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCamera } from "react-icons/fa";
 import EditProfile from "./EditProfile";
 import ChangePass from "./ChangePass";
 import { IoChevronBack } from "react-icons/io5";
+import { useDispatch, useSelector } from "react-redux";
+import { useUpdateUserMutation, useGetMyProfileQuery } from "../../redux/api/authApi";
+import { getUser } from "../../redux/features/auth/authSlice";
+import { message } from "antd";
 
 function ProfilePage() {
+  const { user } = useSelector((state) => state.auth);
   const [activeTab, setActiveTab] = useState("editProfile");
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [updateUser, { isLoading }] = useUpdateUserMutation();
+  const { data: profileData } = useGetMyProfileQuery();
+
+  useEffect(() => {
+    if (profileData?.data?.profileImage) {
+      setProfileImagePreview(profileData.data.profileImage);
+    } else if (user?.profileImage) {
+      setProfileImagePreview(user.profileImage);
+    }
+  }, [profileData?.data?.profileImage, user?.profileImage]);
+
+  const handleProfileImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Show immediate preview
+      setProfileImagePreview(URL.createObjectURL(file));
+      handleProfileImageUpload(file);
+    }
+  };
+
+  const handleProfileImageUpload = async (file) => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('profileImage', file);
+
+    try {
+      const response = await updateUser(formData).unwrap();
+      dispatch(getUser(response.data));
+      message.success("Profile image updated successfully!");
+
+      // Update localStorage user data
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      const updatedUser = { ...currentUser, ...response.data };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+
+      // Update preview with new image from response
+      if (response.data.profileImage) {
+        setProfileImagePreview(response.data.profileImage);
+      }
+    } catch (error) {
+      message.error(error?.data?.message || "Failed to update profile image");
+    }
+  };
 
   return (
     <div className="overflow-y-auto">
@@ -28,22 +79,37 @@ function ProfilePage() {
             <div className="relative">
               <div className="w-[122px] h-[122px] bg-gray-300 rounded-full border-4 border-white shadow-xl flex justify-center items-center">
                 <img
-                  src="https://avatar.iran.liara.run/public/44"
+                  src={profileImagePreview || "https://avatar.iran.liara.run/public/44"}
                   alt="profile"
-                  className="h-30 w-32 rounded-full"
+                  className="h-30 w-32 rounded-full object-cover"
                 />
                 {/* Upload Icon */}
                 <div className="absolute bottom-2 right-2 bg-white p-2 rounded-full shadow-md cursor-pointer">
                   <label htmlFor="profilePicUpload" className="cursor-pointer">
-                    <FaCamera className="text-[#575757]" />
+                    {isLoading ? (
+                      <div className="w-4 h-4 border-2 border-[#575757] border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <FaCamera className="text-[#575757]" />
+                    )}
                   </label>
-                  <input type="file" id="profilePicUpload" className="hidden" />
+                  <input 
+                    type="file" 
+                    id="profilePicUpload" 
+                    className="hidden" 
+                    onChange={handleProfileImageChange}
+                    accept="image/*"
+                    disabled={isLoading}
+                  />
                 </div>
               </div>
             </div>
             <div className="text-center md:text-left">
-              <p className="text-lg sm:text-xl md:text-3xl font-bold">Shah Aman</p>
-              <p className="text-base sm:text-lg font-semibold">Admin</p>
+              <p className="text-lg sm:text-xl md:text-3xl font-bold">
+                {profileData?.data?.fullName || user?.fullName || "Shah Aman"}
+              </p>
+              <p className="text-base sm:text-lg font-semibold">
+                {profileData?.data?.role || user?.role || "Admin"}
+              </p>
             </div>
           </div>
 

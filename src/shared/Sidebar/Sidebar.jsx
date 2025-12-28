@@ -1,5 +1,6 @@
 /* eslint-disable react/prop-types */
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { RxDashboard } from "react-icons/rx";
 import { LuUsers } from "react-icons/lu";
 import { TbBrandWechat, TbReport } from "react-icons/tb";
@@ -11,11 +12,37 @@ import {
   MdOutlineAssignment,
   MdOutlineInventory2,
 } from "react-icons/md";
+import { useLogoutMutation } from "../../redux/api/authApi";
+import { logout } from "../../redux/features/auth/authSlice";
+import { message } from "antd";
 
 const Sidebar = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [logoutApi, { isLoading }] = useLogoutMutation();
   const currentPath = location.pathname;
   const isActive = (path) => currentPath === path;
+
+  const handleLogout = async () => {
+    try {
+      await logoutApi().unwrap();
+      dispatch(logout());
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      navigate("/sign-in");
+      message.success("Logged out successfully!");
+    } catch {
+      // Even if API fails, clear local data and logout
+      dispatch(logout());
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
+      navigate("/sign-in");
+      message.success("Logged out successfully!");
+    }
+  };
 
   return (
     <div
@@ -107,19 +134,6 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <p className="text-lg font-semibold">Categories</p>
           </li>
         </Link>
-        {/* Lab Management */}
-        {/* <Link to="/lab-management">
-          <li
-            className={`flex items-center gap-2 mt-5 cursor-pointer transition-all duration-300 ease-in-out ${
-              isActive("/lab-management")
-                ? "bg-[#111827] text-white px-3 py-3 rounded-lg"
-                : ""
-            }`}
-          >
-            <RiFlaskLine className="w-5 h-5" />
-            <p className="text-lg font-semibold">Lab Management</p>
-          </li>
-        </Link> */}
 
         <Link to="/create-admin">
           <li
@@ -175,12 +189,23 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
 
       {/* Logout Button */}
       <div className="absolute mt-8 md:mt-20 mmd:mt-20 w-full px-5">
-        <Link to="/sign-in">
-          <button className="flex items-center gap-4 w-full py-3 rounded-lg bg-[#111827]  px-3 duration-200 text-white justify-center ">
-            <IoLogOutOutline className="w-5 h-5 font-bold" />
-            <span>Logout</span>
-          </button>
-        </Link>
+        <button
+          onClick={handleLogout}
+          disabled={isLoading}
+          className="flex items-center gap-4 w-full py-3 rounded-lg bg-[#111827] px-3 duration-200 text-white justify-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {isLoading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <span>Logging out...</span>
+            </>
+          ) : (
+            <>
+              <IoLogOutOutline className="w-5 h-5 font-bold" />
+              <span>Logout</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );
