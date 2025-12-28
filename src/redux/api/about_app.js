@@ -3,7 +3,7 @@ import { baseApi } from "../baseUrl";
 // auth api
 export const aboutAppApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    // create terms and condition
+    // create about app
     aboutAppPolicy: builder.mutation({
       query: (credentials) => ({
         url: "/settings/about",
