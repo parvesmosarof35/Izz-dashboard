@@ -1,129 +1,84 @@
 import { ConfigProvider, Modal, Table, Select } from "antd";
 import { useMemo, useState } from "react";
-import { IoSearch, IoChevronBack, IoAddOutline } from "react-icons/io5";
+import { IoSearch, IoChevronBack } from "react-icons/io5";
 import { MdBlock } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { FaRegEye } from "react-icons/fa";
+import {
+  useGetAllUsersQuery,
+  useGetSingleUserQuery,
+  useBlockUserMutation,
+} from "../../redux/api/userManagement";
 
 function UserDetails() {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false); // block modal
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  // const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [editUser, setEditUser] = useState(null);
   const [roleFilter, setRoleFilter] = useState();
   const [searchQuery, setSearchQuery] = useState("");
+  const [pagination, setPagination] = useState({ page: 1, limit: 10 });
+
+  // Get single user details
+  const { data: singleUserData, isLoading: isLoadingSingleUser } =
+    useGetSingleUserQuery(selectedUserId, { skip: !selectedUserId });
+
+  // API call with role and status filters (no pagination)
+  const { data: usersData, isLoading } = useGetAllUsersQuery(
+    roleFilter
+      ? `?${
+          roleFilter === "INACTIVE" ? "status=INACTIVE" : `role=${roleFilter}`
+        }`
+      : ""
+  );
+
+  // Block user mutation
+  const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation();
+
+  // Transform API data to table format
+  const dataSource = useMemo(() => {
+    if (!usersData?.data?.data) return [];
+    return usersData.data.data.map((user) => ({
+      key: user.id,
+      fullName: user.fullName,
+      role: user.role,
+      clinic: "N/A", // API doesn't provide clinic
+      email: user.email,
+      phone: user.contactNumber || "N/A",
+      joined: new Date(user.createdAt).toLocaleDateString(),
+      status: user.status,
+      profileImage: user.profileImage,
+    }));
+  }, [usersData]);
+
   const handleCancel = () => {
     setIsModalOpen(false);
   };
 
   const showViewModal = (user) => {
+    setSelectedUserId(user.key);
     setSelectedUser(user);
     setIsViewModalOpen(true);
   };
   const handleViewCancel = () => {
     setIsViewModalOpen(false);
     setSelectedUser(null);
+    setSelectedUserId(null);
   };
-  const [dataSource, setDataSource] = useState([
-    {
-      key: "1",
-      fullName: "John Doe",
-      role: "User",
-      clinic: "Downtown Dental Clinic",
-      email: "john@example.com",
-      phone: "+1 987 654 3210",
-      joined: "2024-01-12",
-    },
-    {
-      key: "2",
-      fullName: "Emma Smith",
-      role: "Vendor",
-      clinic: "Smile Care Clinic",
-      email: "emma@example.com",
-      phone: "+1 987 654 3211",
-      joined: "2024-03-28",
-    },
-    {
-      key: "3",
-      fullName: "Liam Johnson",
-      role: "User",
-      clinic: "Healthy Teeth Clinic",
-      email: "liam@example.com",
-      phone: "+1 987 654 3212",
-      joined: "2024-06-15",
-    },
-    {
-      key: "4",
-      fullName: "Olivia Brown",
-      role: "Vendor",
-      clinic: "City Dental Center",
-      email: "olivia@example.com",
-      phone: "+1 987 654 3213",
-      joined: "2024-08-02",
-    },
-    {
-      key: "5",
-      fullName: "Noah Davis",
-      role: "User",
-      clinic: "Prime Smiles",
-      email: "noah@example.com",
-      phone: "+1 987 654 3214",
-      joined: "2024-09-10",
-    },
-    {
-      key: "6",
-      fullName: "Sophia Miller",
-      role: "Vendor",
-      clinic: "Bright Smile Hub",
-      email: "sophia@example.com",
-      phone: "+1 987 654 3215",
-      joined: "2024-11-19",
-    },
-    {
-      key: "7",
-      fullName: "James Wilson",
-      role: "User",
-      clinic: "Downtown Dental Clinic",
-      email: "james@example.com",
-      phone: "+1 987 654 3216",
-      joined: "2025-01-05",
-    },
-    {
-      key: "8",
-      fullName: "Isabella Moore",
-      role: "Vendor",
-      clinic: "Healthy Teeth Clinic",
-      email: "isabella@example.com",
-      phone: "+1 987 654 3217",
-      joined: "2025-02-21",
-    },
-    {
-      key: "9",
-      fullName: "Benjamin Taylor",
-      role: "User",
-      clinic: "Prime Smiles",
-      email: "benjamin@example.com",
-      phone: "+1 987 654 3218",
-      joined: "2025-03-03",
-    },
-    {
-      key: "10",
-      fullName: "Mia Anderson",
-      role: "Vendor",
-      clinic: "City Dental Center",
-      email: "mia@example.com",
-      phone: "+1 987 654 3219",
-      joined: "2025-04-12",
-    },
-  ]);
+
+  // Reset pagination when filters change
+  const handleFilterChange = (value) => {
+    setRoleFilter(value);
+    setPagination({ page: 1, limit: pagination.limit });
+  };
   const columns = [
     {
       title: "No",
       key: "no",
       width: 70,
-      render: (_, _r, index) => index + 1,
+      render: (_, _r, index) => (pagination.page - 1) * pagination.limit + index + 1,
     },
     {
       title: "Full Name",
@@ -132,7 +87,9 @@ function UserDetails() {
       render: (value, record) => (
         <div className="flex items-center gap-3">
           <img
-            src={`https://avatar.iran.liara.run/public/${record.key}`}
+            src={
+              record.profileImage || "https://avatar.iran.liara.run/public/44"
+            }
             className="w-10 h-10 object-cover rounded-full"
             alt="User Avatar"
           />
@@ -163,24 +120,32 @@ function UserDetails() {
   const filteredData = useMemo(() => {
     const q = (searchQuery || "").toLowerCase().trim();
     return dataSource.filter((r) => {
-      const matchRole = roleFilter ? r.role === roleFilter : true;
       const matchQuery = q
-        ? [r.fullName, r.email, r.phone, r.clinic, r.role]
-          .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(q))
+        ? [r.fullName, r.email, r.phone, r.role]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(q))
         : true;
-      return matchRole && matchQuery;
+      return matchQuery;
     });
-  }, [dataSource, roleFilter, searchQuery]);
+  }, [dataSource, searchQuery]);
 
   const openBlock = (row) => {
     setSelectedUser(row);
     setIsModalOpen(true);
   };
 
-  const confirmBlock = () => {
-    setIsModalOpen(false);
-    setSelectedUser(null);
+  const confirmBlock = async () => {
+    if (selectedUser) {
+      try {
+        await blockUser(selectedUser.key).unwrap();
+        setIsModalOpen(false);
+        setSelectedUser(null);
+        // Show success message (optional)
+      } catch (error) {
+        // Handle error (optional)
+        console.error("Failed to block user:", error);
+      }
+    }
   };
 
   return (
@@ -193,7 +158,9 @@ function UserDetails() {
         >
           <IoChevronBack className="w-6 h-6" />
         </button>
-        <h1 className="text-white text-xl sm:text-2xl font-bold">User Management</h1>
+        <h1 className="text-white text-xl sm:text-2xl font-bold">
+          User Management
+        </h1>
         {/* Mobile search */}
         <div className="relative w-full md:hidden mt-1">
           <input
@@ -231,16 +198,17 @@ function UserDetails() {
             <Select
               placeholder="Select role"
               value={roleFilter}
-              onChange={setRoleFilter}
+              onChange={handleFilterChange}
               size="large"
               className="w-full md:w-auto md:min-w-[220px]"
               style={{ minWidth: 220 }}
               popupMatchSelectWidth={false}
               dropdownStyle={{ paddingTop: 8, paddingBottom: 8 }}
               options={[
-                { label: "User", value: "User" },
-                { label: "Vendor", value: "Vendor" },
-                { label: "Blocked Users", value: "Blocked" },
+                { label: "All Users", value: "" },
+                { label: "User", value: "USER" },
+                { label: "Vendor", value: "VENDOR" },
+                { label: "Blocked Users", value: "INACTIVE" },
               ]}
             />
           </ConfigProvider>
@@ -273,7 +241,19 @@ function UserDetails() {
         <Table
           dataSource={filteredData}
           columns={columns}
-          pagination={{ pageSize: 10 }}
+          loading={isLoading}
+          pagination={{
+            current: pagination.page,
+            pageSize: pagination.limit,
+            total: filteredData.length,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} items`,
+            onChange: (page, pageSize) => {
+              setPagination({ page, limit: pageSize });
+            },
+          }}
           scroll={{ x: "max-content" }}
         />
         {/* Block Modal */}
@@ -293,15 +273,16 @@ function UserDetails() {
             <div className="text-center py-5 w-full flex justify-center gap-3">
               <button
                 onClick={handleCancel}
-                className="bg-gray-500 text-white font-semibold py-3 px-5 rounded-lg"
+                className="bg-gray-500 text-white font-semibold py-3 px-5 rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmBlock}
-                className="bg-[#111827] text-white font-semibold py-3 px-5 rounded-lg"
+                disabled={isBlocking}
+                className="bg-[#111827] text-white font-semibold py-3 px-5 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
-                Block
+                {isBlocking ? "Blocking..." : "Block"}
               </button>
             </div>
           </div>
@@ -316,66 +297,103 @@ function UserDetails() {
           width={800}
           className="user-view-modal"
         >
-          {selectedUser && (
-            <div className="relative">
-              {/* Header with green gradient */}
-              <div className="bg-gradient-to-r from-[#111827] to-[#111827] p-6 -m-6 mb-6 rounded-t-lg">
-                <div className="flex items-center gap-6">
-                  <div className="relative">
-                    <img
-                      src={`https://avatar.iran.liara.run/public/${selectedUser.key}`}
-                      alt={selectedUser.fullName}
-                      className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
-                    />
-                  </div>
-                  <div className="text-white">
-                    <h2 className="text-3xl font-bold mb-2">
-                      {selectedUser.fullName}
-                    </h2>
-                    <div className="flex items-center gap-3 mb-1">
-                      {/* <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                        {selectedUser.clinic}
-                      </span> */}
-                      <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
-                        Joined: {selectedUser.joined}
-                      </span>
+          {isLoadingSingleUser ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="w-8 h-8 border-2 border-[#111827] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            singleUserData?.data && (
+              <div className="relative">
+                {/* Header with green gradient */}
+                <div className="bg-gradient-to-r from-[#111827] to-[#111827] p-6 -m-6 mb-6 rounded-t-lg">
+                  <div className="flex items-center gap-6">
+                    <div className="relative">
+                      <img
+                        src={
+                          singleUserData.data.profileImage ||
+                          "https://avatar.iran.liara.run/public/44"
+                        }
+                        alt={singleUserData.data.fullName}
+                        className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                      />
+                    </div>
+                    <div className="text-white">
+                      <h2 className="text-3xl font-bold mb-2">
+                        {singleUserData.data.fullName}
+                      </h2>
+                      <div className="flex items-center gap-3 mb-1">
+                        <span className="bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium">
+                          {singleUserData.data.role}
+                        </span>
+                        <span
+                          className={`bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-medium ${
+                            singleUserData.data.status === "ACTIVE"
+                              ? "text-green-300"
+                              : "text-red-300"
+                          }`}
+                        >
+                          {singleUserData.data.status}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Details */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
-                  <div className="text-gray-600 text-sm">Email</div>
-                  <div className="text-lg font-semibold">
-                    {selectedUser.email}
+                {/* Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                    <div className="text-gray-600 text-sm">Email</div>
+                    <div className="text-lg font-semibold">
+                      {singleUserData.data.email}
+                    </div>
+                  </div>
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                    <div className="text-gray-600 text-sm">Phone No</div>
+                    <div className="text-lg font-semibold">
+                      {singleUserData.data.contactNumber || "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                    <div className="text-gray-600 text-sm">Address</div>
+                    <div className="text-lg font-semibold">
+                      {singleUserData.data.address || "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                    <div className="text-gray-600 text-sm">Country</div>
+                    <div className="text-lg font-semibold">
+                      {singleUserData.data.country || "N/A"}
+                    </div>
+                  </div>
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                    <div className="text-gray-600 text-sm">Joined Date</div>
+                    <div className="text-lg font-semibold">
+                      {new Date(
+                        singleUserData.data.createdAt
+                      ).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
+                    <div className="text-gray-600 text-sm">
+                      Stripe Connected
+                    </div>
+                    <div className="text-lg font-semibold">
+                      {singleUserData.data.isStripeConnected ? "Yes" : "No"}
+                    </div>
                   </div>
                 </div>
-                <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
-                  <div className="text-gray-600 text-sm">Phone No</div>
-                  <div className="text-lg font-semibold">
-                    {selectedUser.phone}
-                  </div>
-                </div>
-                <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
-                  <div className="text-gray-600 text-sm">Joined Date</div>
-                  <div className="text-lg font-semibold">
-                    {selectedUser.joined}
-                  </div>
-                </div>
-              </div>
 
-              {/* Action buttons */}
-              <div className="flex justify-end items-center mt-8 pt-6 border-t border-gray-200">
-                <button
-                  onClick={handleViewCancel}
-                  className="bg-gray-500 text-white font-semibold px-8 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  Close
-                </button>
+                {/* Action buttons */}
+                <div className="flex justify-end items-center mt-8 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={handleViewCancel}
+                    className="bg-gray-500 text-white font-semibold px-8 py-2 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
-            </div>
+            )
           )}
         </Modal>
       </ConfigProvider>
