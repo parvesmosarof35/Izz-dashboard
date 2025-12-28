@@ -7,13 +7,13 @@ import { setUser } from "../../redux/features/auth/authSlice";
 import { message } from "antd";
 
 function SignInPage() {
-      const dispatch = useDispatch();
+  const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const navigate = useNavigate();
 
   // api
-   const [login] = useLoginMutation();
+  const [login, { isLoading }] = useLoginMutation();
 
   const handleCheckboxChange = (event) => {
     if (event.target.checked) {
@@ -24,30 +24,27 @@ function SignInPage() {
   };
 
   const onFinish = async (values) => {
-    console.log("Login attempt with:", values);
     const userInfo = {
       email: values.email,
-      password: values.password
-    }
-    
+      password: values.password,
+    };
+
     try {
-      console.log("Calling login API...");
       const response = await login(userInfo).unwrap();
-      console.log("API response:", response);
-      
+
       if (response?.data?.accessToken) {
         const fullData = {
           user: response.data.user,
           token: response.data.accessToken,
-          refreshToken: response.data.refreshToken
+          refreshToken: response.data.refreshToken,
         };
-        
-        localStorage.setItem('accessToken', response.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.refreshToken);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
+
+        localStorage.setItem("accessToken", response.data.accessToken);
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+
         dispatch(setUser(fullData));
-        navigate('/');
+        navigate("/");
         message.success("Login Successfully!");
       }
     } catch (error) {
@@ -64,15 +61,18 @@ function SignInPage() {
             <div className="flex justify-center items-center mb-10">
               <img src="/logo.png" alt="" />
             </div>
-            <form className="space-y-5" onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              const values = {
-                email: formData.get('email'),
-                password: formData.get('password')
-              };
-              onFinish(values);
-            }}>
+            <form
+              className="space-y-5"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const values = {
+                  email: formData.get("email"),
+                  password: formData.get("password"),
+                };
+                onFinish(values);
+              }}
+            >
               <div className="w-full">
                 <label className="text-xl text-[#0D0D0D] mb-2 font-bold">
                   Email
@@ -175,12 +175,14 @@ function SignInPage() {
                   Forgot Password?
                 </Link>
               </div>
+              {/* login button */}
               <div className="flex justify-center items-center">
                 <button
                   type="submit"
-                  className="w-1/3 bg-[#111827] text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5"
+                  disabled={isLoading}
+                  className="w-1/3 bg-[#111827] text-white font-bold py-3 rounded-lg shadow-lg cursor-pointer mt-5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Log In
+                  {isLoading ? "Logging in..." : "Log In"}
                 </button>
               </div>
             </form>
