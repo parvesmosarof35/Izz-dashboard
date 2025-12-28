@@ -1,6 +1,6 @@
 import { baseApi } from "../baseUrl";
 
-// auth api
+// user management api
 export const userManagementApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // get users

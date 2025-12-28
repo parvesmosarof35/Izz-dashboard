@@ -1,6 +1,6 @@
 import { baseApi } from "../baseUrl";
 
-// auth api
+// policy api
 export const policyApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // create privacy policy

@@ -1,6 +1,6 @@
 import { baseApi } from "../baseUrl";
 
-// auth api
+// about api
 export const aboutAppApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // create about app

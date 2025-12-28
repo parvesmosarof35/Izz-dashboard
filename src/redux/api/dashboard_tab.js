@@ -1,6 +1,6 @@
 import { baseApi } from "../baseUrl";
 
-// auth api
+// dashboard api
 export const dashboardTabApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // get dashboard overview

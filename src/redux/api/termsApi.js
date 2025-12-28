@@ -1,6 +1,6 @@
 import { baseApi } from "../baseUrl";
 
-// auth api
+// terms api
 export const termsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // get terms and condition
