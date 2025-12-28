@@ -3,12 +3,26 @@ import { useNavigate } from "react-router-dom";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { IoChevronBack } from "react-icons/io5";
+import { useCreateTermsAndConditionMutation } from "../../redux/api/termsApi";
+import { message } from "antd";
 
 function TermsCondition() {
   const [content, setContent] = useState(
     "There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc. There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum.There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc. There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum."
   );
   const navigate = useNavigate();
+  const [createTerms, { isLoading }] = useCreateTermsAndConditionMutation();
+
+  const handleSave = async () => {
+    try {
+      await createTerms({ description: content }).unwrap();
+      message.success("Terms and Conditions saved successfully!");
+    } catch (error) {
+      message.error(
+        error?.data?.message || "Failed to save terms and conditions"
+      );
+    }
+  };
 
   return (
     <div className="px-5 md:px-0 py-5 md:py-10">
@@ -33,10 +47,11 @@ function TermsCondition() {
       </div>
       <div className="text-center py-5">
         <button
-          onClick={() => console.log(content)}
-          className="bg-[#111827] text-white font-semibold w-full py-2 rounded transition duration-200"
+          onClick={handleSave}
+          disabled={isLoading}
+          className="bg-[#111827] text-white font-semibold cursor-pointer w-full py-2 rounded transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Save changes
+          {isLoading ? "Saving..." : "Save changes"}
         </button>
       </div>
     </div>
