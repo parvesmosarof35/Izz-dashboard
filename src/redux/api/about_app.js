@@ -1,13 +1,13 @@
 import { baseApi } from "../baseUrl";
 
 // auth api
-export const policyApi = baseApi.injectEndpoints({
+export const aboutAppApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // create terms and condition
-    createPolicy: builder.mutation({
+    aboutAppPolicy: builder.mutation({
       query: (credentials) => ({
-        url: "/policy",
-        method: "PATCH",
+        url: "/settings/about",
+        method: "POST",
         headers: {
           Authorization: `${localStorage.getItem("accessToken")}`,
         },
@@ -17,4 +17,4 @@ export const policyApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useCreatePolicyMutation } = policyApi;
+export const { useAboutAppPolicyMutation } = aboutAppApi;
