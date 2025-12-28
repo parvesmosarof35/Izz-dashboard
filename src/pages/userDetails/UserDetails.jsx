@@ -78,7 +78,8 @@ function UserDetails() {
       title: "No",
       key: "no",
       width: 70,
-      render: (_, _r, index) => (pagination.page - 1) * pagination.limit + index + 1,
+      render: (_, _r, index) =>
+        (pagination.page - 1) * pagination.limit + index + 1,
     },
     {
       title: "Full Name",
