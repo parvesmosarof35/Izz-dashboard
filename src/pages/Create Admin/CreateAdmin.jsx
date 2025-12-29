@@ -1,86 +1,33 @@
 import { ConfigProvider, Table } from "antd";
 import { useNavigate } from "react-router-dom";
-import { useState, useRef } from "react";
-import {
-  IoChevronBack,
-  IoAddOutline,
-  IoEyeOutline,
-  IoEyeOffOutline,
-  IoCloudUploadOutline,
-} from "react-icons/io5";
+import { useMemo } from "react";
+import { IoChevronBack, IoAddOutline } from "react-icons/io5";
+import { useGetAllAdminsQuery } from "../../redux/api/admin";
 
 export default function CreateAdmin() {
   const navigate = useNavigate();
 
-  const [dataSource, setDataSource] = useState([
-    {
-      key: "1",
-      no: "1",
-      name: "John Admin",
-      email: "john@tdk.com",
-      password: "********",
-      designation: "Super Admin",
-    },
-    {
-      key: "2",
-      no: "2",
-      name: "Jane Admin",
-      email: "jane@tdk.com",
-      password: "********",
-      designation: "Admin",
-    },
-    {
-      key: "3",
-      no: "3",
-      name: "Sam Manager",
-      email: "sam@tdk.com",
-      password: "********",
-      designation: "Admin",
-    },
-  ]);
+  // API call to get all admins
+  const { data: adminsData, isLoading } = useGetAllAdminsQuery();
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [showPass, setShowPass] = useState({ new: false, confirm: false });
-  const [imagePreview, setImagePreview] = useState("");
-  const fileInputRef = useRef(null);
+  // Transform API data to table format
+  const dataSource = useMemo(() => {
+    if (!adminsData?.data) return [];
 
-  const handleImageChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
-    }
-  };
+    // Handle different response structures
+    const admins = Array.isArray(adminsData.data)
+      ? adminsData.data
+      : adminsData.data.data || [];
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!form.name || !form.email || !form.password || !form.confirmPassword) {
-      alert("Please fill in all fields");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-    const nextNo = String(dataSource.length + 1);
-    const newRow = {
-      key: nextNo,
-      no: nextNo,
-      name: form.name,
-      email: form.email,
+    return admins.map((admin, index) => ({
+      key: admin.id || String(index + 1),
+      no: String(index + 1),
+      name: admin.fullName || admin.name,
+      email: admin.email,
       password: "********",
-      designation: "Admin",
-    };
-    setDataSource((prev) => [newRow, ...prev]);
-    setForm({ name: "", email: "", password: "", confirmPassword: "" });
-    setImagePreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+      designation: admin.role || "Admin",
+    }));
+  }, [adminsData]);
 
   const columns = [
     { title: "No", dataIndex: "no", key: "no" },
@@ -104,7 +51,7 @@ export default function CreateAdmin() {
         <button
           type="button"
           onClick={() => navigate("/add-admin")}
-          className="ml-auto bg-white text-[#111827] px-3 py-1 rounded-md font-semibold flex items-center gap-2 hover:opacity-95 transition"
+          className="ml-auto bg-white text-[#111827] px-3 py-1 rounded-md font-semibold flex items-center gap-2 hover:opacity-95 transition cursor-pointer"
         >
           <IoAddOutline className="w-4 h-4" />
           Add Admin
@@ -134,7 +81,15 @@ export default function CreateAdmin() {
         <Table
           dataSource={dataSource}
           columns={columns}
-          pagination={{ pageSize: 10 }}
+          loading={isLoading}
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => 
+              `Showing ${range[0]}-${range[1]} of ${total} admins`,
+            pageSizeOptions: ['5', '10', '20', '50'],
+          }}
           scroll={{ x: "max-content" }}
         />
       </ConfigProvider>
