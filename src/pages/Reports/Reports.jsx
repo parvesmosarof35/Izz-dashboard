@@ -1,17 +1,47 @@
 import { ConfigProvider, Modal, Table } from "antd";
-import { useState } from "react";
-import { IoSearch, IoChevronBack } from "react-icons/io5";
+import { useState, useMemo } from "react";
+import { IoChevronBack } from "react-icons/io5";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { FaRegEye } from "react-icons/fa";
-import { BiMessage } from "react-icons/bi";
 import { LuMessageSquareText } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
+import { useGetAllReportsQuery } from "../../redux/api/reports";
 
 function Reports() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate();
+
+  // API call to get all reports
+  const { data: reportsData, isLoading } = useGetAllReportsQuery({
+    page: currentPage,
+    limit: 10,
+  });
+
+  // transform API data to table format
+  const dataSource = useMemo(() => {
+    if (!reportsData?.data) return [];
+
+    // Handle different response structures
+    const reports = Array.isArray(reportsData.data)
+      ? reportsData.data
+      : reportsData.data.data || [];
+
+    return reports.map((report, index) => ({
+      key: report.id || String(index + 1),
+      no: String(index + 1),
+      reportFrom: report.user?.fullName || "Unknown User",
+      reportReason: report.subject,
+      reportTo: report.reportedUser?.fullName || "Unknown User",
+      date: new Date(report.createdAt).toLocaleDateString(),
+      user: report.user,
+      reportedUser: report.reportedUser,
+      type: report.supportType,
+      description: report.description,
+    }));
+  }, [reportsData]);
 
   const showModal = (user) => {
     setSelectedUser(user);
@@ -30,88 +60,11 @@ function Reports() {
     setIsViewModalOpen(false);
     setSelectedUser(null);
   };
-  const dataSource = [
-    {
-      key: "1",
-      no: "1",
-      reportFrom: "John Doe",
-      reportReason: "Harassment in comments.",
-      reportTo: "Emily Johnson",
-      date: "2023-06-15",
-    },
-    {
-      key: "2",
-      no: "2",
-      reportFrom: "Jane Smith",
-      reportReason: "Spam links posted.",
-      reportTo: "Michael Wilson",
-      date: "2023-06-15",
-    },
-    {
-      key: "3",
-      no: "3",
-      reportFrom: "Robert Brown",
-      reportReason: "Fake event details.",
-      reportTo: "Lucas Hall",
-      date: "2023-06-15",
-    },
-    {
-      key: "4",
-      no: "4",
-      reportFrom: "Olivia Thomas",
-      reportReason: "Explicit images shared.",
-      reportTo: "William Anderson",
-      date: "2023-06-15",
-    },
-    {
-      key: "5",
-      no: "5",
-      reportFrom: "James Martinez",
-      reportReason: "Political misinformation.",
-      reportTo: "News Feed",
-      date: "2023-06-15",
-    },
-    {
-      key: "6",
-      no: "6",
-      reportFrom: "Sophia Taylor",
-      reportReason: "Impersonation attempt.",
-      reportTo: "User Profile",
-      date: "2023-06-15",
-    },
-    {
-      key: "7",
-      no: "7",
-      reportFrom: "Ethan Harris",
-      reportReason: "Offensive language.",
-      reportTo: "Group Chat",
-      date: "2023-06-15",
-    },
-    {
-      key: "8",
-      no: "8",
-      reportFrom: "Charlotte Clark",
-      reportReason: "Crypto spam.",
-      reportTo: "Dashboard",
-      date: "2023-06-15",
-    },
-    {
-      key: "9",
-      no: "9",
-      reportFrom: "Henry Young",
-      reportReason: "Extremist content.",
-      reportTo: "News Section",
-      date: "2023-06-15",
-    },
-    {
-      key: "10",
-      no: "10",
-      reportFrom: "Harper King",
-      reportReason: "Violent images.",
-      reportTo: "Gallery",
-      date: "2023-06-15",
-    },
-  ];
+
+  // Pagination handlers
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
 
   const columns = [
     {
@@ -124,11 +77,13 @@ function Reports() {
       key: "reportFrom",
       render: (_, record) => (
         <div className="flex items-center gap-3">
-          <img
-            src={`https://avatar.iran.liara.run/public/${record.key}`}
-            className="w-10 h-10 object-cover rounded-full"
-            alt="User Avatar"
-          />
+          {record.user?.profileImage && (
+            <img
+              src={record.user.profileImage}
+              className="w-10 h-10 object-cover rounded-full"
+              alt="User Avatar"
+            />
+          )}
           <div className="flex flex-col gap-[2px]">
             <span className="leading-none">{record.reportFrom}</span>
           </div>
@@ -145,11 +100,13 @@ function Reports() {
       key: "reportTo",
       render: (_, record) => (
         <div className="flex items-center gap-3">
-          <img
-            src={`https://avatar.iran.liara.run/public/${record.key}`}
-            className="w-10 h-10 object-cover rounded-full"
-            alt="User Avatar"
-          />
+          {record.reportedUser?.profileImage && (
+            <img
+              src={record.reportedUser.profileImage}
+              className="w-10 h-10 object-cover rounded-full"
+              alt="User Avatar"
+            />
+          )}
           <div className="flex flex-col gap-[2px]">
             <span className="leading-none">{record.reportTo}</span>
           </div>
@@ -220,7 +177,17 @@ function Reports() {
         <Table
           dataSource={dataSource}
           columns={columns}
-          pagination={{ pageSize: 10 }}
+          loading={isLoading}
+          pagination={{
+            current: currentPage,
+            pageSize: 10,
+            total: reportsData?.meta?.total || 12,
+            showSizeChanger: false,
+            showQuickJumper: true,
+            onChange: handlePageChange,
+            showTotal: (total, range) =>
+              `Showing ${range[0]}-${range[1]} of ${total} reports`,
+          }}
           scroll={{ x: "max-content" }}
         />
         {/* Delete Modal */}
@@ -402,7 +369,7 @@ function Reports() {
               <div className="flex justify-end items-center mt-8 pt-6 border-t border-gray-200">
                 <button
                   onClick={handleViewCancel}
-                  className="bg-gray-500 text-white font-semibold px-8 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  className="bg-gray-500 text-white font-semibold px-8 py-2 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
                 >
                   Close
                 </button>
