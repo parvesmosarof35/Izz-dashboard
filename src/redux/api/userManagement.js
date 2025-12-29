@@ -14,6 +14,31 @@ export const userManagementApi = baseApi.injectEndpoints({
       }),
       providesTags: ["User"],
     }),
+    // get users with pagination
+    getAllUsersPaginated: builder.query({
+      query: ({ page = 1, limit = 10, role, status }) => {
+        const queryParams = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+        });
+
+        if (role && role !== "INACTIVE") {
+          queryParams.append("role", role);
+        }
+        if (status === "INACTIVE") {
+          queryParams.append("status", "INACTIVE");
+        }
+
+        return {
+          url: `/users?${queryParams.toString()}`,
+          method: "GET",
+          headers: {
+            Authorization: `${localStorage.getItem("accessToken")}`,
+          },
+        };
+      },
+      providesTags: ["User"],
+    }),
 
     // get single user
     getSingleUser: builder.query({
@@ -39,4 +64,9 @@ export const userManagementApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetAllUsersQuery, useGetSingleUserQuery, useBlockUserMutation } = userManagementApi;
+export const {
+  useGetAllUsersQuery,
+  useGetAllUsersPaginatedQuery,
+  useGetSingleUserQuery,
+  useBlockUserMutation,
+} = userManagementApi;

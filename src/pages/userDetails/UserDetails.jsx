@@ -5,7 +5,7 @@ import { MdBlock } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { FaRegEye } from "react-icons/fa";
 import {
-  useGetAllUsersQuery,
+  useGetAllUsersPaginatedQuery,
   useGetSingleUserQuery,
   useBlockUserMutation,
 } from "../../redux/api/userManagement";
@@ -25,14 +25,13 @@ function UserDetails() {
   const { data: singleUserData, isLoading: isLoadingSingleUser } =
     useGetSingleUserQuery(selectedUserId, { skip: !selectedUserId });
 
-  // API call with role and status filters (no pagination)
-  const { data: usersData, isLoading } = useGetAllUsersQuery(
-    roleFilter
-      ? `?${
-          roleFilter === "INACTIVE" ? "status=INACTIVE" : `role=${roleFilter}`
-        }`
-      : ""
-  );
+  // API call with pagination and filters
+  const { data: usersData, isLoading } = useGetAllUsersPaginatedQuery({
+    page: pagination.page,
+    limit: pagination.limit,
+    role: roleFilter === "INACTIVE" ? undefined : roleFilter,
+    status: roleFilter === "INACTIVE" ? "INACTIVE" : undefined,
+  });
 
   // Block user mutation
   const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation();
@@ -53,6 +52,19 @@ function UserDetails() {
     }));
   }, [usersData]);
 
+  // Apply search filter to paginated data
+  const filteredData = useMemo(() => {
+    const q = (searchQuery || "").toLowerCase().trim();
+    return dataSource.filter((r) => {
+      const matchQuery = q
+        ? [r.fullName, r.email, r.phone, r.role]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(q))
+        : true;
+      return matchQuery;
+    });
+  }, [dataSource, searchQuery]);
+
   const handleCancel = () => {
     setIsModalOpen(false);
   };
@@ -72,6 +84,11 @@ function UserDetails() {
   const handleFilterChange = (value) => {
     setRoleFilter(value);
     setPagination({ page: 1, limit: pagination.limit });
+  };
+
+  // Pagination handlers
+  const handlePageChange = (page, pageSize) => {
+    setPagination({ page, limit: pageSize });
   };
   const columns = [
     {
@@ -117,18 +134,6 @@ function UserDetails() {
       ),
     },
   ];
-
-  const filteredData = useMemo(() => {
-    const q = (searchQuery || "").toLowerCase().trim();
-    return dataSource.filter((r) => {
-      const matchQuery = q
-        ? [r.fullName, r.email, r.phone, r.role]
-            .filter(Boolean)
-            .some((v) => String(v).toLowerCase().includes(q))
-        : true;
-      return matchQuery;
-    });
-  }, [dataSource, searchQuery]);
 
   const openBlock = (row) => {
     setSelectedUser(row);
@@ -246,14 +251,13 @@ function UserDetails() {
           pagination={{
             current: pagination.page,
             pageSize: pagination.limit,
-            total: filteredData.length,
+            total: usersData?.data?.meta?.total || filteredData.length,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} items`,
-            onChange: (page, pageSize) => {
-              setPagination({ page, limit: pageSize });
-            },
+            onChange: handlePageChange,
+            onShowSizeChange: handlePageChange,
           }}
           scroll={{ x: "max-content" }}
         />
