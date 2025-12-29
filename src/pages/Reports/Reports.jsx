@@ -5,7 +5,10 @@ import { RiDeleteBin6Line } from "react-icons/ri";
 import { FaRegEye } from "react-icons/fa";
 import { LuMessageSquareText } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
-import { useGetAllReportsQuery } from "../../redux/api/reports";
+import {
+  useGetAllReportsQuery,
+  useDeleteReportMutation,
+} from "../../redux/api/reports";
 
 function Reports() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,6 +22,9 @@ function Reports() {
     page: currentPage,
     limit: 10,
   });
+
+  // Delete mutation
+  const [deleteReport, { isLoading: isDeleting }] = useDeleteReportMutation();
 
   // transform API data to table format
   const dataSource = useMemo(() => {
@@ -64,6 +70,19 @@ function Reports() {
   // Pagination handlers
   const handlePageChange = (page) => {
     setCurrentPage(page);
+  };
+
+  // Delete handler
+  const handleDelete = async () => {
+    if (selectedUser?.key) {
+      try {
+        await deleteReport(selectedUser.key).unwrap();
+        setIsModalOpen(false);
+        setSelectedUser(null);
+      } catch (error) {
+        console.error("Delete failed:", error);
+      }
+    }
   };
 
   const columns = [
@@ -202,15 +221,22 @@ function Reports() {
               Are you sure!
             </h1>
             <p className="text-xl text-center mt-5">
-              Do you want to delete this user profile?
+              Do you want to delete this report?
             </p>
             <div className="text-center py-5 w-full">
               <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="bg-red-500 text-white font-semibold w-1/3 py-3 px-5 rounded-lg mr-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isDeleting ? "Deleting..." : "DELETE"}
+              </button>
+              {/* <button
                 onClick={() => setIsModalOpen(false)}
-                className="bg-[#111827] text-white font-semibold w-1/3 py-3 px-5 rounded-lg"
+                className="bg-gray-500 text-white font-semibold w-1/3 py-3 px-5 rounded-lg"
               >
                 CONFIRM
-              </button>
+              </button> */}
             </div>
           </div>
         </Modal>

@@ -14,7 +14,18 @@ export const reportsApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Reports"],
     }),
+    // delete report
+    deleteReport: builder.mutation({
+      query: (id) => ({
+        url: `/supports/${id}`,
+        method: "DELETE",
+        headers: {
+          Authorization: `${localStorage.getItem("accessToken")}`,
+        },
+      }),
+      invalidatesTags: ["Reports"],
+    }),
   }),
 });
 
-export const { useGetAllReportsQuery } = reportsApi;
+export const { useGetAllReportsQuery, useDeleteReportMutation } = reportsApi;
