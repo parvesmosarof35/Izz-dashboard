@@ -6,6 +6,8 @@ import {
   useGetGamificationQuery,
   useUpdateGamificationMutation,
   useGetAllBadgesQuery,
+  useToggleBadgeStatusMutation,
+  useDeleteBadgeMutation,
 } from "../../redux/api/gamification";
 
 import explorer from "../../assets/Explorer.png";
@@ -16,6 +18,8 @@ function Gamification() {
   const { data: badgesData } = useGetAllBadgesQuery();
   const [updateGamification, { isLoading: isUpdating }] =
     useUpdateGamificationMutation();
+  const [toggleBadgeStatus] = useToggleBadgeStatusMutation();
+  const [deleteBadge] = useDeleteBadgeMutation();
 
   // Initialize with defaults
   const [xpSettings, setXpSettings] = useState([]);
@@ -169,16 +173,42 @@ function Gamification() {
       );
     }
   };
-  const toggleBadge = (id) =>
-    setBadges((arr) =>
-      arr.map((b) => (b.id === id ? { ...b, active: !b.active } : b))
-    );
+  const toggleBadge = async (id) => {
+    try {
+      const badge = badges.find((b) => b.id === id);
+      if (badge) {
+        await toggleBadgeStatus({
+          badgeId: id,
+          isActive: !badge.active,
+        }).unwrap();
+        // Update local state immediately for UI responsiveness
+        setBadges((arr) =>
+          arr.map((b) => (b.id === id ? { ...b, active: !b.active } : b))
+        );
+      }
+    } catch (error) {
+      console.error("Failed to toggle badge status:", error);
+    }
+  };
+
   const askDeleteBadge = (id) =>
     setBadgeToDelete(badges.find((b) => b.id === id) || null);
-  const confirmDeleteBadge = () => {
-    if (badgeToDelete)
-      setBadges((arr) => arr.filter((b) => b.id !== badgeToDelete.id));
-    setBadgeToDelete(null);
+
+  const confirmDeleteBadge = async () => {
+    if (badgeToDelete) {
+      try {
+        const badgeId =
+          typeof badgeToDelete.id === "string"
+            ? badgeToDelete.id
+            : badgeToDelete.id.toString();
+        await deleteBadge(badgeId).unwrap(); // Pass badgeId directly, not wrapped in object
+        // Update local state immediately for UI responsiveness
+        setBadges((arr) => arr.filter((b) => b.id !== badgeToDelete.id));
+        setBadgeToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete badge:", error);
+      }
+    }
   };
   const cancelDeleteBadge = () => setBadgeToDelete(null);
 
@@ -310,7 +340,7 @@ function Gamification() {
                   <button
                     type="button"
                     onClick={() => toggleBadge(b.id)}
-                    className={`px-2 py-1 rounded text-xs font-medium ${
+                    className={`px-2 py-1 rounded text-xs font-medium cursor-pointer ${
                       b.active
                         ? "bg-emerald-100 text-emerald-700"
                         : "bg-gray-100 text-gray-600"
@@ -321,7 +351,7 @@ function Gamification() {
                   <button
                     type="button"
                     onClick={() => askDeleteBadge(b.id)}
-                    className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-600"
+                    className="px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-600 cursor-pointer"
                   >
                     Delete
                   </button>

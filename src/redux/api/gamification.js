@@ -39,9 +39,42 @@ export const gamificationApi = baseApi.injectEndpoints({
       }),
       providesTags: ["Gamification"],
     }),
-    
+
+    // toggle badge status (active/inactive)
+    toggleBadgeStatus: builder.mutation({
+      query: ({ badgeId, isActive }) => {
+        return {
+          url: `/gamification/badges/${badgeId}/active`,
+          method: "PATCH",
+          body: { isActive },
+          headers: {
+            Authorization: `${localStorage.getItem("accessToken")}`,
+          },
+        };
+      },
+      invalidatesTags: ["Gamification"],
+    }),
+
+    // delete badge
+    deleteBadge: builder.mutation({
+      query: (badgeId) => {
+        return {
+          url: `/gamification/badges/${badgeId}`,
+          method: "PATCH",
+          headers: {
+            Authorization: `${localStorage.getItem("accessToken")}`,
+          },
+        };
+      },
+      invalidatesTags: ["Gamification"],
+    }),
   }),
 });
 
-export const { useGetGamificationQuery, useUpdateGamificationMutation, useGetAllBadgesQuery } =
-  gamificationApi;
+export const {
+  useGetGamificationQuery,
+  useUpdateGamificationMutation,
+  useGetAllBadgesQuery,
+  useToggleBadgeStatusMutation,
+  useDeleteBadgeMutation,
+} = gamificationApi;
