@@ -1,29 +1,155 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Modal } from "antd";
 import { IoAddOutline, IoRemoveOutline } from "react-icons/io5";
 import { FaPen, FaTrash } from "react-icons/fa";
+import {
+  useGetGamificationQuery,
+  useUpdateGamificationMutation,
+} from "../../redux/api/gamification";
 
-
-import  explorer from "../../assets/Explorer.png";
-import  critic from "../../assets/Critic.png";
-import  connector from "../../assets/Connector.png";
-import  challenger from "../../assets/Challenger.png";
+import explorer from "../../assets/Explorer.png";
+import critic from "../../assets/Critic.png";
+import connector from "../../assets/Connector.png";
+import challenger from "../../assets/Challenger.png";
 
 function Gamification() {
+  // API integration
+  const { data: gamificationData, isLoading } = useGetGamificationQuery();
+  const [updateGamification, { isLoading: isUpdating }] =
+    useUpdateGamificationMutation();
+
+  // Initialize with defaults
   const [xpSettings, setXpSettings] = useState([
-    { key: "xpPerAction", label: "Xp per action", value: 10 },
-    { key: "review", label: "Review", value: 10 },
-    { key: "referral", label: "Referral", value: 10 },
-    { key: "challenge", label: "Challenge", value: 10 },
-    { key: "bonus", label: "XP Bonus 2P", value: 10 },
-    { key: "xpToPoints", label: "xp to points conversion rate", value: 10 },
+    {
+      key: "xpPerBooking",
+      label: "XP per booking",
+      value: 10,
+    },
+    {
+      key: "xpPerReview",
+      label: "XP per review",
+      value: 5,
+    },
+    {
+      key: "xpPerReferral",
+      label: "XP per referral",
+      value: 50,
+    },
+    {
+      key: "xpPerChallenge",
+      label: "XP per challenge",
+      value: 25,
+    },
+    {
+      key: "xpPerDailyLogin",
+      label: "XP per daily login",
+      value: 2,
+    },
+    {
+      key: "streakBonusXP",
+      label: "Streak bonus XP",
+      value: 5,
+    },
+    {
+      key: "referralPointsReward",
+      label: "Referral points reward",
+      value: 10,
+    },
+    {
+      key: "pointsToXPConversion",
+      label: "Points to XP conversion",
+      value: 0.1,
+    },
   ]);
 
+  // Sync with API data when it loads (but don't overwrite user changes)
+  useEffect(() => {
+    if (gamificationData) {
+      setXpSettings((currentSettings) => {
+        // Only update if current settings are defaults or if API data is different
+        const hasUserChanges = currentSettings.some(setting => 
+          setting.value !== (setting.key === 'xpPerBooking' ? 10 : 
+                           setting.key === 'xpPerReview' ? 5 :
+                           setting.key === 'xpPerReferral' ? 50 :
+                           setting.key === 'xpPerChallenge' ? 25 :
+                           setting.key === 'xpPerDailyLogin' ? 2 :
+                           setting.key === 'streakBonusXP' ? 5 :
+                           setting.key === 'referralPointsReward' ? 10 :
+                           setting.key === 'pointsToXPConversion' ? 0.1 : 0)
+        );
+        
+        if (!hasUserChanges) {
+          return [
+            {
+              key: "xpPerBooking",
+              label: "XP per booking",
+              value: gamificationData.xpPerBooking || 10,
+            },
+            {
+              key: "xpPerReview",
+              label: "XP per review",
+              value: gamificationData.xpPerReview || 5,
+            },
+            {
+              key: "xpPerReferral",
+              label: "XP per referral",
+              value: gamificationData.xpPerReferral || 50,
+            },
+            {
+              key: "xpPerChallenge",
+              label: "XP per challenge",
+              value: gamificationData.xpPerChallenge || 25,
+            },
+            {
+              key: "xpPerDailyLogin",
+              label: "XP per daily login",
+              value: gamificationData.xpPerDailyLogin || 2,
+            },
+            {
+              key: "streakBonusXP",
+              label: "Streak bonus XP",
+              value: gamificationData.streakBonusXP || 5,
+            },
+            {
+              key: "referralPointsReward",
+              label: "Referral points reward",
+              value: gamificationData.referralPointsReward || 10,
+            },
+            {
+              key: "pointsToXPConversion",
+              label: "Points to XP conversion",
+              value: gamificationData.pointsToXPConversion || 0.1,
+            },
+          ];
+        }
+        return currentSettings;
+      });
+    }
+  }, [gamificationData]);
+
   const [badges, setBadges] = useState([
-    { id: 1, name: "Explorer", desc: "1st Booking", icon: explorer, active: true },
+    {
+      id: 1,
+      name: "Explorer",
+      desc: "1st Booking",
+      icon: explorer,
+      active: true,
+    },
     { id: 2, name: "Critic", desc: "1st Booking", icon: critic, active: true },
-    { id: 3, name: "Connector", desc: "1st Booking", icon: connector, active: true },
-    { id: 4, name: "Challenger", desc: "1st Booking", icon: challenger, active: true },
+    {
+      id: 3,
+      name: "Connector",
+      desc: "1st Booking",
+      icon: connector,
+      active: true,
+    },
+    {
+      id: 4,
+      name: "Challenger",
+      desc: "1st Booking",
+      icon: challenger,
+      active: true,
+    },
   ]);
 
   const [levels, setLevels] = useState([
@@ -61,16 +187,49 @@ function Gamification() {
     status: "",
   });
 
-  const inc = (idx) =>
+  const inc = async (idx) => {
+    const newValue = xpSettings[idx].value + 1;
+    
+    // Update local state immediately for UI responsiveness
     setXpSettings((arr) =>
-      arr.map((r, i) => (i === idx ? { ...r, value: r.value + 1 } : r))
+      arr.map((r, i) => (i === idx ? { ...r, value: newValue } : r))
     );
-  const dec = (idx) =>
+
+    // Update API immediately
+    try {
+      const settingKey = xpSettings[idx].key;
+      const settingsData = { [settingKey]: newValue };
+      await updateGamification(settingsData).unwrap();
+    } catch (error) {
+      console.error("Failed to update setting:", error);
+      // Revert on error
+      setXpSettings((arr) =>
+        arr.map((r, i) => (i === idx ? { ...r, value: r.value - 1 } : r))
+      );
+    }
+  };
+
+  const dec = async (idx) => {
+    const newValue = Math.max(0, xpSettings[idx].value - 1);
+    
+    // Update local state immediately for UI responsiveness
     setXpSettings((arr) =>
-      arr.map((r, i) =>
-        i === idx ? { ...r, value: Math.max(0, r.value - 1) } : r
-      )
+      arr.map((r, i) => (i === idx ? { ...r, value: newValue } : r))
     );
+
+    // Update API immediately
+    try {
+      const settingKey = xpSettings[idx].key;
+      const settingsData = { [settingKey]: newValue };
+      await updateGamification(settingsData).unwrap();
+    } catch (error) {
+      console.error("Failed to update setting:", error);
+      // Revert on error
+      setXpSettings((arr) =>
+        arr.map((r, i) => (i === idx ? { ...r, value: r.value + 1 } : r))
+      );
+    }
+  };
   const toggleBadge = (id) =>
     setBadges((arr) =>
       arr.map((b) => (b.id === id ? { ...b, active: !b.active } : b))
@@ -121,6 +280,21 @@ function Gamification() {
     setLevelToEdit(null);
   };
 
+  // Save all gamification settings
+  const saveAllSettings = async () => {
+    try {
+      const settingsData = xpSettings.reduce((acc, setting) => {
+        acc[setting.key] = setting.value;
+        return acc;
+      }, {});
+
+      await updateGamification(settingsData).unwrap();
+      // Show success message (optional)
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-[#111827] px-4 md:px-5 py-3 rounded-md">
@@ -146,7 +320,7 @@ function Gamification() {
                   <button
                     type="button"
                     onClick={() => dec(idx)}
-                    className="w-8 h-8 rounded-md border flex items-center justify-center hover:bg-gray-50"
+                    className="w-8 h-8 rounded-md border flex items-center justify-center hover:bg-gray-50 cursor-pointer"
                     aria-label="decrease"
                   >
                     <IoRemoveOutline />
@@ -164,7 +338,7 @@ function Gamification() {
                   <button
                     type="button"
                     onClick={() => inc(idx)}
-                    className="w-8 h-8 rounded-md border flex items-center justify-center hover:bg-gray-50"
+                    className="w-8 h-8 rounded-md border flex items-center justify-center hover:bg-gray-50 cursor-pointer"
                     aria-label="increase"
                   >
                     <IoAddOutline />
@@ -278,7 +452,8 @@ function Gamification() {
       >
         {badgeToDelete && (
           <p>
-            Are you sure you want to delete the badge "{badgeToDelete.name}"?
+            Are you sure you want to delete the badge &quot;{badgeToDelete.name}
+            &quot;?
           </p>
         )}
       </Modal>
@@ -294,7 +469,8 @@ function Gamification() {
       >
         {levelToDelete && (
           <p>
-            Are you sure you want to delete the level "{levelToDelete.level}"?
+            Are you sure you want to delete the level &quot;
+            {levelToDelete.level}&quot;?
           </p>
         )}
       </Modal>
@@ -350,6 +526,17 @@ function Gamification() {
           </div>
         </div>
       </Modal>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={saveAllSettings}
+          disabled={isUpdating}
+          className="bg-[#111827] text-white px-6 py-2 rounded-md hover:bg-gray-800 disabled:opacity-50"
+        >
+          {isUpdating ? "Saving..." : "Save All Settings"}
+        </button>
+      </div>
     </div>
   );
 }
