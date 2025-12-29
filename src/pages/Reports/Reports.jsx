@@ -167,14 +167,14 @@ function Reports() {
       render: (_, record) => (
         <div className="flex gap-2">
           <button className="" onClick={() => navigate("/chat")}>
-            <LuMessageSquareText className=" w-10 h-10 cursor-pointer rounded-md" />
+            <LuMessageSquareText className=" w-5 h-5 cursor-pointer rounded-md" />
           </button>
 
           <button className="" onClick={() => showViewModal(record)}>
-            <FaRegEye className="text-[#111827] w-10 h-10 cursor-pointer rounded-md" />
+            <FaRegEye className="text-[#111827] w-5 h-5 cursor-pointer rounded-md" />
           </button>
           <button className="" onClick={() => showModal(record)}>
-            <RiDeleteBin6Line className="text-red-500 w-10 h-10 cursor-pointer rounded-md" />
+            <RiDeleteBin6Line className="text-red-500 w-5 h-5 cursor-pointer rounded-md" />
           </button>
         </div>
       ),
@@ -391,8 +391,8 @@ function Reports() {
                       <br />
                       <br />
                       <strong>Category:</strong> This report has been classified
-                      as "{selectedUser.type}". Further investigation is
-                      required to determine the appropriate action.
+                      as &quot;{selectedUser.type}&quot;. Further investigation
+                      is required to determine the appropriate action.
                     </p>
                   </div>
                 </div>
