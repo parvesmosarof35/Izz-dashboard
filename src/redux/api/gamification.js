@@ -27,8 +27,21 @@ export const gamificationApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Gamification"],
     }),
+
+    // get all badges
+    getAllBadges: builder.query({
+      query: () => ({
+        url: "/gamification/all-badges",
+        method: "GET",
+        headers: {
+          Authorization: `${localStorage.getItem("accessToken")}`,
+        },
+      }),
+      providesTags: ["Gamification"],
+    }),
+    
   }),
 });
 
-export const { useGetGamificationQuery, useUpdateGamificationMutation } =
+export const { useGetGamificationQuery, useUpdateGamificationMutation, useGetAllBadgesQuery } =
   gamificationApi;
