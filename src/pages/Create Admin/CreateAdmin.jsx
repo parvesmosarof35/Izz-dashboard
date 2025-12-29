@@ -86,9 +86,9 @@ export default function CreateAdmin() {
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `Showing ${range[0]}-${range[1]} of ${total} admins`,
-            pageSizeOptions: ['5', '10', '20', '50'],
+            pageSizeOptions: ["5", "10", "20", "50"],
           }}
           scroll={{ x: "max-content" }}
         />
