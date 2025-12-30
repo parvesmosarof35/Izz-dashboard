@@ -346,6 +346,7 @@ function Gamification() {
     });
   };
   const cancelEditLevel = () => setLevelToEdit(null);
+  
   const saveEditLevel = () => {
     if (!levelToEdit) return;
     setLevels((arr) =>
