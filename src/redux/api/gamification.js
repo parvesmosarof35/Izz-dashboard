@@ -68,6 +68,62 @@ export const gamificationApi = baseApi.injectEndpoints({
       },
       invalidatesTags: ["Gamification"],
     }),
+
+    // create badge
+    createBadge: builder.mutation({
+      query: (badgeData) => {
+        // Check if iconUrl is a file (for form-data) or URL (for JSON)
+        const isFileUpload =
+          badgeData.iconUrl && badgeData.iconUrl.startsWith("data:");
+
+        if (isFileUpload) {
+          // Use FormData for file uploads
+          const formData = new FormData();
+          formData.append("name", badgeData.name);
+          formData.append("description", badgeData.description);
+          formData.append("iconUrl", badgeData.iconUrl); // Changed from "icon" to "iconUrl"
+          formData.append("badgeType", badgeData.badgeType);
+          formData.append("xpReward", badgeData.xpReward.toString());
+          formData.append("pointsReward", badgeData.pointsReward.toString());
+
+          return {
+            url: "/gamification/badges",
+            method: "POST",
+            body: formData,
+            headers: {
+              Authorization: `${localStorage.getItem("accessToken")}`,
+              // Don't set Content-Type for FormData - browser sets it automatically with boundary
+            },
+          };
+        } else {
+          // Use regular JSON for URL uploads
+          return {
+            url: "/gamification/badges",
+            method: "POST",
+            body: badgeData,
+            headers: {
+              Authorization: `${localStorage.getItem("accessToken")}`,
+              "Content-Type": "application/json",
+            },
+          };
+        }
+      },
+      invalidatesTags: ["Gamification"],
+    }),
+
+    // get levels all
+    getLevelsAll: builder.query({
+      query: () => {
+        return {
+          url: "/gamification/level/all",
+          method: "GET",
+          headers: {
+            Authorization: `${localStorage.getItem("accessToken")}`,
+          },
+        };
+      },
+      providesTags: ["Gamification"],
+    }),
   }),
 });
 
@@ -77,4 +133,6 @@ export const {
   useGetAllBadgesQuery,
   useToggleBadgeStatusMutation,
   useDeleteBadgeMutation,
+  useCreateBadgeMutation,
+  useGetLevelsAllQuery
 } = gamificationApi;

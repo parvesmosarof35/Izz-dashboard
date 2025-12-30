@@ -6,20 +6,26 @@ import {
   useGetGamificationQuery,
   useUpdateGamificationMutation,
   useGetAllBadgesQuery,
+  useGetLevelsAllQuery,
   useToggleBadgeStatusMutation,
   useDeleteBadgeMutation,
+  useCreateBadgeMutation,
 } from "../../redux/api/gamification";
 
 import explorer from "../../assets/Explorer.png";
 
 function Gamification() {
   // API integration
-  const { data: gamificationData, isLoading } = useGetGamificationQuery();
+  const { data: gamificationData } = useGetGamificationQuery();
   const { data: badgesData } = useGetAllBadgesQuery();
+  const { data: levelsData } = useGetLevelsAllQuery();
   const [updateGamification, { isLoading: isUpdating }] =
     useUpdateGamificationMutation();
   const [toggleBadgeStatus] = useToggleBadgeStatusMutation();
-  const [deleteBadge] = useDeleteBadgeMutation();
+  const [deleteBadge, { isLoading: isDeletingBadge }] =
+    useDeleteBadgeMutation();
+  const [createBadge, { isLoading: isCreatingBadge }] =
+    useCreateBadgeMutation();
 
   // Initialize with defaults
   const [xpSettings, setXpSettings] = useState([]);
@@ -95,29 +101,26 @@ function Gamification() {
     }
   }, [badgesData]);
 
-  const [levels, setLevels] = useState([
-    {
-      id: 1,
-      level: "Summer Challenge",
-      range: "100 - 500",
-      benefits: "Discount 5%",
-      status: "50%",
-    },
-    {
-      id: 2,
-      level: "Winter Challenge",
-      range: "501 - 1000",
-      benefits: "Priority Access",
-      status: "70%",
-    },
-    {
-      id: 3,
-      level: "Festival Challenge",
-      range: "1001 - 2000",
-      benefits: "VIP Perks",
-      status: "55%",
-    },
-  ]);
+  // Initialize levels with defaults
+  const [levels, setLevels] = useState([]);
+
+  // Sync levels with API data when it loads
+  useEffect(() => {
+    if (levelsData?.data) {
+      const apiLevels = levelsData.data.map((level) => ({
+        id: level.id,
+        level: level.title,
+        range: `${level.minXP} - ${level.maxXP}`,
+        benefits: level.benefits.join(", "),
+        status: `${Math.round(
+          (level.minXP /
+            (levelsData.data[levelsData.data.length - 1]?.maxXP || 9999)) *
+            100
+        )}%`,
+      }));
+      setLevels(apiLevels);
+    }
+  }, [levelsData]);
 
   // Modals state
   const [badgeToDelete, setBadgeToDelete] = useState(null);
@@ -128,6 +131,18 @@ function Gamification() {
     range: "",
     benefits: "",
     status: "",
+  });
+
+  // Create badge state
+  const [showCreateBadgeModal, setShowCreateBadgeModal] = useState(false);
+  const [createBadgeForm, setCreateBadgeForm] = useState({
+    name: "",
+    description: "",
+    iconUrl: "",
+    iconFile: null, // Add file state
+    badgeType: "FIRST_BOOKING",
+    xpReward: 0,
+    pointsReward: 0,
   });
 
   const inc = async (idx) => {
@@ -211,6 +226,68 @@ function Gamification() {
     }
   };
   const cancelDeleteBadge = () => setBadgeToDelete(null);
+
+  // Create badge functions
+  const openCreateBadgeModal = () => setShowCreateBadgeModal(true);
+  const closeCreateBadgeModal = () => {
+    setShowCreateBadgeModal(false);
+    setCreateBadgeForm({
+      name: "",
+      description: "",
+      iconUrl: "",
+      iconFile: null, // Reset iconFile state
+      badgeType: "FIRST_BOOKING",
+      xpReward: 0,
+      pointsReward: 0,
+    });
+  };
+
+  const handleCreateBadgeFormChange = (field, value) => {
+    // Convert numeric fields to numbers
+    const processedValue =
+      field === "xpReward" || field === "pointsReward"
+        ? value === ""
+          ? 0
+          : Number(value)
+        : value;
+
+    setCreateBadgeForm((prev) => ({
+      ...prev,
+      [field]: processedValue,
+    }));
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target.result;
+        setCreateBadgeForm((prev) => ({
+          ...prev,
+          iconUrl: dataUrl,
+          iconFile: file,
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCreateBadge = async () => {
+    try {
+      // Ensure numeric values are properly converted
+      const formData = {
+        ...createBadgeForm,
+        xpReward: Number(createBadgeForm.xpReward) || 0,
+        pointsReward: Number(createBadgeForm.pointsReward) || 0,
+      };
+      await createBadge(formData).unwrap();
+      // Reset form and close modal
+      closeCreateBadgeModal();
+    } catch (error) {
+      console.error("Failed to create badge:", error);
+    }
+  };
 
   const askDeleteLevel = (id) =>
     setLevelToDelete(levels.find((l) => l.id === id) || null);
@@ -320,9 +397,18 @@ function Gamification() {
 
         {/* Badges & Achievements */}
         <div className="border rounded-lg p-4">
-          <h2 className="text-base font-semibold mb-3">
-            Badges & Achievements Management
-          </h2>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-base font-semibold">
+              Badges & Achievements Management
+            </h2>
+            <button
+              type="button"
+              onClick={openCreateBadgeModal}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 cursor-pointer"
+            >
+              Create Badge
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {badges.map((b) => (
               <div
@@ -415,8 +501,9 @@ function Gamification() {
         open={!!badgeToDelete}
         onCancel={cancelDeleteBadge}
         onOk={confirmDeleteBadge}
-        okText="Delete"
+        okText={isDeletingBadge ? "Deleting..." : "Delete"}
         okButtonProps={{ danger: true }}
+        confirmLoading={isDeletingBadge}
         title="Delete Badge"
       >
         {badgeToDelete && (
@@ -453,44 +540,196 @@ function Gamification() {
         title="Edit Level"
       >
         <div className="grid grid-cols-1 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Level</label>
+          <input
+            type="text"
+            placeholder="Level"
+            value={editForm.level}
+            onChange={(e) =>
+              setEditForm({ ...editForm, level: e.target.value })
+            }
+            className="w-full p-2 border rounded"
+          />
+          <input
+            type="text"
+            placeholder="Range"
+            value={editForm.range}
+            onChange={(e) =>
+              setEditForm({ ...editForm, range: e.target.value })
+            }
+            className="w-full p-2 border rounded"
+          />
+          <input
+            type="text"
+            placeholder="Benefits"
+            value={editForm.benefits}
+            onChange={(e) =>
+              setEditForm({ ...editForm, benefits: e.target.value })
+            }
+            className="w-full p-2 border rounded"
+          />
+          <input
+            type="text"
+            placeholder="Status"
+            value={editForm.status}
+            onChange={(e) =>
+              setEditForm({ ...editForm, status: e.target.value })
+            }
+            className="w-full p-2 border rounded"
+          />
+        </div>
+      </Modal>
+
+      {/* Create Badge Modal */}
+      <Modal
+        open={showCreateBadgeModal}
+        onCancel={closeCreateBadgeModal}
+        onOk={handleCreateBadge}
+        okText={isCreatingBadge ? "Creating..." : "Create Badge"}
+        confirmLoading={isCreatingBadge}
+        title="Create New Badge"
+      >
+        <div className="grid grid-cols-1 gap-4">
+          {/* Badge Name Field */}
+          <div className="space-y-2">
+            <label htmlFor="badge-name" className="block text-sm font-medium">
+              Badge Name
+            </label>
             <input
-              className="border rounded-md px-3 py-2"
-              value={editForm.level}
+              id="badge-name"
+              type="text"
+              name="name"
+              placeholder="Badge Name"
+              value={createBadgeForm.name}
               onChange={(e) =>
-                setEditForm((p) => ({ ...p, level: e.target.value }))
+                handleCreateBadgeFormChange("name", e.target.value)
               }
+              className="w-full p-2 border rounded"
+              aria-label="Badge Name"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">XP Range</label>
-            <input
-              className="border rounded-md px-3 py-2"
-              value={editForm.range}
+
+          {/* Description Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="badge-description"
+              className="block text-sm font-medium"
+            >
+              Description
+            </label>
+            <textarea
+              id="badge-description"
+              name="description"
+              placeholder="Description"
+              value={createBadgeForm.description}
               onChange={(e) =>
-                setEditForm((p) => ({ ...p, range: e.target.value }))
+                handleCreateBadgeFormChange("description", e.target.value)
               }
+              className="w-full p-2 border rounded"
+              rows={3}
+              aria-label="Badge Description"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Benefits</label>
+
+          {/* Icon Upload Field */}
+          <div className="space-y-2">
+            <label htmlFor="badge-icon" className="block text-sm font-medium">
+              Badge Icon
+            </label>
             <input
-              className="border rounded-md px-3 py-2"
-              value={editForm.benefits}
+              id="badge-icon"
+              type="file"
+              name="icon"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="w-full p-2 border rounded"
+              aria-label="Badge Icon Upload"
+            />
+            {createBadgeForm.iconUrl && (
+              <div className="mt-3">
+                <img
+                  src={createBadgeForm.iconUrl || "/placeholder.svg"}
+                  alt="Badge preview"
+                  className="w-16 h-16 object-cover rounded"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleCreateBadgeFormChange("iconUrl", "")}
+                  className="mt-2 text-red-600 text-sm hover:text-red-700"
+                >
+                  Remove Image
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Badge Type Field */}
+          <div className="space-y-2">
+            <label htmlFor="badge-type" className="block text-sm font-medium">
+              Badge Type
+            </label>
+            <select
+              name="badgeType"
+              value={createBadgeForm.badgeType}
               onChange={(e) =>
-                setEditForm((p) => ({ ...p, benefits: e.target.value }))
+                handleCreateBadgeFormChange("badgeType", e.target.value)
               }
+              className="w-full p-2 border rounded"
+              aria-label="Badge Type"
+            >
+              <option value="FIRST_BOOKING">First Booking</option>
+              <option value="REVIEW_MASTER">Review Master</option>
+              <option value="REFER_CHAMPION">Referral Champion</option>
+              <option value="STREAK_MASTER">Streak Master</option>
+              <option value="CHALLENGE_WINNER">Challenge Winner</option>
+              <option value="ELITE_USER">Elite User</option>
+              <option value="VIP_MEMBER">VIP Member</option>
+              <option value="SPEED_BOOKER">Speed Booker</option>
+              <option value="LOYAL_CUSTOMER">Loyal Customer</option>
+              <option value="EXPLORER">Explorer</option>
+            </select>
+          </div>
+
+          {/* XP Reward Field */}
+          <div className="space-y-2">
+            <label htmlFor="badge-xp" className="block text-sm font-medium">
+              XP Reward
+            </label>
+            <input
+              id="badge-xp"
+              type="number"
+              name="xpReward"
+              placeholder="XP Reward"
+              value={createBadgeForm.xpReward}
+              onChange={(e) =>
+                handleCreateBadgeFormChange(
+                  "xpReward",
+                  parseInt(e.target.value) || 0
+                )
+              }
+              className="w-full p-2 border rounded"
+              aria-label="XP Reward"
             />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Status</label>
+
+          {/* Points Reward Field */}
+          <div className="space-y-2">
+            <label htmlFor="badge-points" className="block text-sm font-medium">
+              Points Reward
+            </label>
             <input
-              className="border rounded-md px-3 py-2"
-              value={editForm.status}
+              id="badge-points"
+              type="number"
+              name="pointsReward"
+              placeholder="Points Reward"
+              value={createBadgeForm.pointsReward}
               onChange={(e) =>
-                setEditForm((p) => ({ ...p, status: e.target.value }))
+                handleCreateBadgeFormChange(
+                  "pointsReward",
+                  parseInt(e.target.value) || 0
+                )
               }
+              className="w-full p-2 border rounded"
+              aria-label="Points Reward"
             />
           </div>
         </div>
