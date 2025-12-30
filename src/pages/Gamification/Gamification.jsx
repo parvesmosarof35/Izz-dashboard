@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { Modal } from "antd";
 import { IoAddOutline, IoRemoveOutline } from "react-icons/io5";
@@ -23,8 +24,10 @@ function Gamification() {
   const { data: levelsData } = useGetLevelsAllQuery();
   const [updateGamification, { isLoading: isUpdating }] =
     useUpdateGamificationMutation();
-  const [updateLevel, { isLoading: isUpdatingLevel }] = useUpdateLevelMutation();
-  const [deleteLevel, { isLoading: isDeletingLevel }] = useDeleteLevelMutation();
+  const [updateLevel, { isLoading: isUpdatingLevel }] =
+    useUpdateLevelMutation();
+  const [deleteLevel, { isLoading: isDeletingLevel }] =
+    useDeleteLevelMutation();
   const [toggleBadgeStatus] = useToggleBadgeStatusMutation();
   const [deleteBadge, { isLoading: isDeletingBadge }] =
     useDeleteBadgeMutation();
@@ -346,7 +349,7 @@ function Gamification() {
     });
   };
   const cancelEditLevel = () => setLevelToEdit(null);
-  
+
   const saveEditLevel = () => {
     if (!levelToEdit) return;
     setLevels((arr) =>
