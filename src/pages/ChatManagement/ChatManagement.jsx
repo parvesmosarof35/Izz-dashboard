@@ -1,25 +1,25 @@
-import { useState } from 'react';
-import { SearchOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Modal, Pagination } from 'antd';
+import { useState } from "react";
+import { SearchOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Modal, Pagination } from "antd";
 
 export default function ChatManagement() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState(null);
   const pageSize = 5;
-  
+
   const [chatGroups, setChatGroups] = useState([
-    { id: 1, name: 'Live Jazz Night', totalMembers: '1400+' },
-    { id: 2, name: 'Creators Connect', totalMembers: '850+' },
-    { id: 3, name: 'Artists Community', totalMembers: '1200+' },
-    { id: 4, name: 'Tech Enthusiasts', totalMembers: '2100+' },
-    { id: 5, name: 'Music Lovers', totalMembers: '950+' },
-    { id: 6, name: 'Photography Club', totalMembers: '780+' },
-    { id: 7, name: 'Book Readers', totalMembers: '650+' },
-    { id: 8, name: 'Fitness Group', totalMembers: '1100+' },
-    { id: 9, name: 'Foodies United', totalMembers: '1350+' },
-    { id: 10, name: 'Travel Buddies', totalMembers: '1650+' },
+    { id: 1, name: "Live Jazz Night", totalMembers: "1400+" },
+    { id: 2, name: "Creators Connect", totalMembers: "850+" },
+    { id: 3, name: "Artists Community", totalMembers: "1200+" },
+    { id: 4, name: "Tech Enthusiasts", totalMembers: "2100+" },
+    { id: 5, name: "Music Lovers", totalMembers: "950+" },
+    { id: 6, name: "Photography Club", totalMembers: "780+" },
+    { id: 7, name: "Book Readers", totalMembers: "650+" },
+    { id: 8, name: "Fitness Group", totalMembers: "1100+" },
+    { id: 9, name: "Foodies United", totalMembers: "1350+" },
+    { id: 10, name: "Travel Buddies", totalMembers: "1650+" },
   ]);
 
   const handleDelete = (group) => {
@@ -28,9 +28,9 @@ export default function ChatManagement() {
   };
 
   const confirmDelete = () => {
-    console.log('Deleting chat group:', selectedGroup);
+    console.log("Deleting chat group:", selectedGroup);
     // Actual delete logic would go here
-    setChatGroups(chatGroups.filter(group => group.id !== selectedGroup.id));
+    setChatGroups(chatGroups.filter((group) => group.id !== selectedGroup.id));
     setIsModalOpen(false);
     setSelectedGroup(null);
   };
@@ -40,13 +40,16 @@ export default function ChatManagement() {
     setSelectedGroup(null);
   };
 
-  const filteredGroups = chatGroups.filter(group =>
+  const filteredGroups = chatGroups.filter((group) =>
     group.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Calculate pagination
   const startIndex = (currentPage - 1) * pageSize;
-  const paginatedGroups = filteredGroups.slice(startIndex, startIndex + pageSize);
+  const paginatedGroups = filteredGroups.slice(
+    startIndex,
+    startIndex + pageSize
+  );
   const totalItems = filteredGroups.length;
 
   return (
@@ -59,7 +62,7 @@ export default function ChatManagement() {
               <h1 className="text-xl lg:text-2xl font-semibold text-gray-900">
                 Chat Management
               </h1>
-              
+
               {/* Search Bar */}
               <div className="relative w-full sm:w-80">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,11 +106,14 @@ export default function ChatManagement() {
                   >
                     <div className="col-span-6 flex items-center">
                       <span className="text-sm font-medium text-gray-900">
-                        {String(startIndex + index + 1).padStart(2, '0')}. {group.name}
+                        {String(startIndex + index + 1).padStart(2, "0")}.{" "}
+                        {group.name}
                       </span>
                     </div>
                     <div className="col-span-4 flex items-center">
-                      <span className="text-sm text-gray-600">{group.totalMembers}</span>
+                      <span className="text-sm text-gray-600">
+                        {group.totalMembers}
+                      </span>
                     </div>
                     <div className="col-span-2 flex items-center justify-center">
                       <button
@@ -132,7 +138,8 @@ export default function ChatManagement() {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-gray-900 mb-1">
-                          {String(startIndex + index + 1).padStart(2, '0')}. {group.name}
+                          {String(startIndex + index + 1).padStart(2, "0")}.{" "}
+                          {group.name}
                         </h3>
                         <div className="flex items-center text-xs text-gray-500">
                           <span className="font-medium">Total members:</span>
