@@ -161,7 +161,7 @@ function EarningsTable() {
       key: "action",
       render: (_, record) => (
         <button className="" onClick={() => showViewModal(record)}>
-          <FaRegEye className="text-[#111827] w-10 h-10 cursor-pointer rounded-md" />
+          <FaRegEye className="text-[#111827] w-5 h-5 cursor-pointer rounded-md" />
         </button>
       ),
     },
@@ -178,7 +178,7 @@ function EarningsTable() {
         </button>
         <button
           type="button"
-          onClick={() => navigate('/coupon')}
+          onClick={() => navigate("/coupon")}
           className="px-5 py-2 rounded-md bg-white text-[#111827] font-semibold border border-[#111827]"
         >
           Coupon
@@ -256,15 +256,21 @@ function EarningsTable() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
                   <div className="text-gray-600 text-sm">Price</div>
-                  <div className="text-lg font-semibold">{selectedUser.price}</div>
+                  <div className="text-lg font-semibold">
+                    {selectedUser.price}
+                  </div>
                 </div>
                 <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
                   <div className="text-gray-600 text-sm">Ticket Name</div>
-                  <div className="text-lg font-semibold">{selectedUser.ticketName}</div>
+                  <div className="text-lg font-semibold">
+                    {selectedUser.ticketName}
+                  </div>
                 </div>
                 <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm">
                   <div className="text-gray-600 text-sm">Trx ID</div>
-                  <div className="text-lg font-semibold">{selectedUser.trxId}</div>
+                  <div className="text-lg font-semibold">
+                    {selectedUser.trxId}
+                  </div>
                 </div>
               </div>
 
