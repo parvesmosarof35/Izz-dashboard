@@ -7,6 +7,8 @@ import {
   useUpdateGamificationMutation,
   useGetAllBadgesQuery,
   useGetLevelsAllQuery,
+  useUpdateLevelMutation,
+  useDeleteLevelMutation,
   useToggleBadgeStatusMutation,
   useDeleteBadgeMutation,
   useCreateBadgeMutation,
@@ -21,6 +23,8 @@ function Gamification() {
   const { data: levelsData } = useGetLevelsAllQuery();
   const [updateGamification, { isLoading: isUpdating }] =
     useUpdateGamificationMutation();
+  const [updateLevel, { isLoading: isUpdatingLevel }] = useUpdateLevelMutation();
+  const [deleteLevel, { isLoading: isDeletingLevel }] = useDeleteLevelMutation();
   const [toggleBadgeStatus] = useToggleBadgeStatusMutation();
   const [deleteBadge, { isLoading: isDeletingBadge }] =
     useDeleteBadgeMutation();
@@ -289,12 +293,46 @@ function Gamification() {
     }
   };
 
+  const askEditLevel = (id) =>
+    setLevelToEdit(levels.find((l) => l.id === id) || null);
+  const confirmEditLevel = async () => {
+    if (levelToEdit) {
+      try {
+        const levelData = {
+          title: editForm.level,
+          minXP: parseInt(editForm.range.split(" - ")[0]),
+          maxXP: parseInt(editForm.range.split(" - ")[1]),
+          benefits: editForm.benefits.split(", "),
+        };
+        await updateLevel({
+          levelId: levelToEdit.id,
+          levelData,
+        }).unwrap();
+        setLevelToEdit(null);
+        setEditForm({
+          level: "",
+          range: "",
+          benefits: "",
+          status: "",
+        });
+      } catch (error) {
+        console.error("Failed to update level:", error);
+      }
+    }
+  };
+
   const askDeleteLevel = (id) =>
     setLevelToDelete(levels.find((l) => l.id === id) || null);
-  const confirmDeleteLevel = () => {
-    if (levelToDelete)
-      setLevels((arr) => arr.filter((l) => l.id !== levelToDelete.id));
-    setLevelToDelete(null);
+  const confirmDeleteLevel = async () => {
+    if (levelToDelete) {
+      try {
+        await deleteLevel(levelToDelete.id).unwrap();
+        setLevels((arr) => arr.filter((l) => l.id !== levelToDelete.id));
+        setLevelToDelete(null);
+      } catch (error) {
+        console.error("Failed to delete level:", error);
+      }
+    }
   };
   const cancelDeleteLevel = () => setLevelToDelete(null);
 
@@ -473,7 +511,7 @@ function Gamification() {
                     <div className="flex items-center gap-3 text-[#111827]">
                       <button
                         type="button"
-                        className="hover:opacity-80"
+                        className="hover:opacity-80 cursor-pointer"
                         aria-label="edit"
                         onClick={() => openEditLevel(l)}
                       >
@@ -481,7 +519,7 @@ function Gamification() {
                       </button>
                       <button
                         type="button"
-                        className="text-red-600"
+                        className="text-red-600 cursor-pointer"
                         aria-label="delete"
                         onClick={() => askDeleteLevel(l.id)}
                       >
@@ -521,6 +559,7 @@ function Gamification() {
         onOk={confirmDeleteLevel}
         okText="Delete"
         okButtonProps={{ danger: true }}
+        confirmLoading={isDeletingLevel}
         title="Delete Level"
       >
         {levelToDelete && (
@@ -534,9 +573,10 @@ function Gamification() {
       {/* Edit Level Modal */}
       <Modal
         open={!!levelToEdit}
-        onCancel={cancelEditLevel}
-        onOk={saveEditLevel}
+        onCancel={cancelDeleteLevel}
+        onOk={confirmEditLevel}
         okText="Save"
+        confirmLoading={isUpdatingLevel}
         title="Edit Level"
       >
         <div className="grid grid-cols-1 gap-3">

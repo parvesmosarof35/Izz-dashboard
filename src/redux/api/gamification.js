@@ -124,6 +124,46 @@ export const gamificationApi = baseApi.injectEndpoints({
       },
       providesTags: ["Gamification"],
     }),
+
+    // delete level
+    deleteLevel: builder.mutation({
+      query: (levelId) => ({
+        url: `/gamification/level/${levelId}`,
+        method: "DELETE",
+        headers: {
+          Authorization: `${localStorage.getItem("accessToken")}`,
+        },
+      }),
+      invalidatesTags: ["Gamification"],
+    }),
+
+    // create level
+    createLevel: builder.mutation({
+      query: (levelData) => ({
+        url: "/gamification/level/create",
+        method: "POST",
+        body: levelData,
+        headers: {
+          Authorization: `${localStorage.getItem("accessToken")}`,
+          "Content-Type": "application/json",
+        },
+      }),
+      invalidatesTags: ["Gamification"],
+    }),
+
+    // update level
+    updateLevel: builder.mutation({
+      query: ({ levelId, levelData }) => ({
+        url: `/gamification/level/${levelId}`,
+        method: "PATCH",
+        body: levelData,
+        headers: {
+          Authorization: `${localStorage.getItem("accessToken")}`,
+          "Content-Type": "application/json",
+        },
+      }),
+      invalidatesTags: ["Gamification"],
+    }),
   }),
 });
 
@@ -131,8 +171,11 @@ export const {
   useGetGamificationQuery,
   useUpdateGamificationMutation,
   useGetAllBadgesQuery,
+  useGetLevelsAllQuery,
+  useUpdateLevelMutation,
+  useDeleteLevelMutation,
+  useCreateLevelMutation,
   useToggleBadgeStatusMutation,
   useDeleteBadgeMutation,
   useCreateBadgeMutation,
-  useGetLevelsAllQuery
 } = gamificationApi;
