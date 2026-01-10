@@ -1,49 +1,86 @@
+/* eslint-disable no-unused-vars */
 import { useState } from "react";
-import { ConfigProvider, List, Button } from "antd";
+import { ConfigProvider, List, Button, message, Spin, Alert } from "antd";
 import { IoChevronBack } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import {
+  useGetAllNotificationsQuery,
+  useMarkAsReadMutation,
+  useMarkAsUnreadMutation,
+  useMarkAllAsReadMutation,
+} from "../../redux/api/notification";
 
 export default function Notifications() {
   const navigate = useNavigate();
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      title: "New user registered",
-      time: "2m ago",
-      read: false,
-      description:
-        "A new dentist account has been created and is awaiting verification.",
-    },
-    {
-      id: 2,
-      title: "Case #123 has been updated",
-      time: "10m ago",
-      read: false,
-      description: "Lab Technician updated the case status to 'In Production'.",
-    },
-    {
-      id: 3,
-      title: "Weekly report is ready",
-      time: "1h ago",
-      read: true,
-      description:
-        "Your weekly engagement and growth report is now available for review.",
-    },
-    {
-      id: 4,
-      title: "Clinic profile approved",
-      time: "3h ago",
-      read: false,
-      description:
-        "Smile Care Clinic has been approved and is now visible to users.",
-    },
-  ]);
 
-  const markRead = (id, read = true) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, read } : i)));
+  // API hooks
+  const {
+    data: notificationsData,
+    isLoading,
+    error,
+    refetch,
+  } = useGetAllNotificationsQuery();
+  const [markAsRead] = useMarkAsReadMutation();
+  const [markAsUnread] = useMarkAsUnreadMutation();
+  const [markAllAsRead, { isLoading: isMarkingAllAsRead }] =
+    useMarkAllAsReadMutation();
+
+  // Track loading states for individual notifications
+  const [loadingStates, setLoadingStates] = useState({});
+
+  // Get notifications from API data with fallback
+  const getNotificationsData = () => {
+    if (!notificationsData) return [];
+
+    // Handle different possible response structures
+    if (Array.isArray(notificationsData.data)) {
+      return notificationsData.data;
+    } else if (Array.isArray(notificationsData)) {
+      return notificationsData;
+    } else if (
+      notificationsData?.data?.data &&
+      Array.isArray(notificationsData.data.data)
+    ) {
+      return notificationsData.data.data;
+    }
+
+    return [];
   };
-  const markAllRead = () =>
-    setItems((prev) => prev.map((i) => ({ ...i, read: true })));
+
+  const items = getNotificationsData();
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      setLoadingStates((prev) => ({ ...prev, [id]: "read" }));
+      await markAsRead(id).unwrap();
+      message.success("Notification marked as read");
+    } catch (error) {
+      message.error("Failed to mark as read");
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [id]: null }));
+    }
+  };
+
+  const handleMarkAsUnread = async (id) => {
+    try {
+      setLoadingStates((prev) => ({ ...prev, [id]: "unread" }));
+      await markAsUnread(id).unwrap();
+      message.success("Notification marked as unread");
+    } catch (error) {
+      message.error("Failed to mark as unread");
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [id]: null }));
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllAsRead().unwrap();
+      message.success("All notifications marked as read");
+    } catch (error) {
+      message.error("Failed to mark all as read");
+    }
+  };
   return (
     <div className="p-5 min-h-screen">
       <div className="bg-[#111827] px-4 md:px-5 py-3 rounded-md mb-3 flex flex-wrap md:flex-nowrap items-start md:items-center gap-2 md:gap-3">
@@ -58,11 +95,41 @@ export default function Notifications() {
           Notifications
         </h1>
         <div className="ml-0 md:ml-auto w-full md:w-auto flex items-center justify-between md:justify-end gap-2 mt-2 md:mt-0">
-          <Button onClick={markAllRead} size="small">
+          <Button
+            onClick={handleMarkAllRead}
+            size="small"
+            loading={isMarkingAllAsRead}
+            disabled={items.length === 0}
+          >
             Mark all read
           </Button>
         </div>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <Alert
+          message="Error loading notifications"
+          description="Failed to load notifications. Please try again."
+          type="error"
+          showIcon
+          className="mb-4"
+          action={
+            <Button size="small" onClick={() => refetch()}>
+              Retry
+            </Button>
+          }
+        />
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-center py-10">
+          <Spin size="large" />
+        </div>
+      )}
+
+      {/* Notifications List */}
       <ConfigProvider
         theme={{
           components: {
@@ -78,7 +145,7 @@ export default function Notifications() {
             dataSource={items}
             renderItem={(item) => (
               <div
-                onClick={() => !item.read && markRead(item.id, true)}
+                onClick={() => !item.read && handleMarkAsRead(item.id)}
                 className={`group flex items-start justify-between gap-4 p-4 border border-gray-200 bg-white rounded-lg mb-3 transition hover:shadow-sm cursor-pointer ${
                   item.read ? "opacity-90" : ""
                 }`}
@@ -118,7 +185,8 @@ export default function Notifications() {
                   {item.read ? (
                     <Button
                       size="small"
-                      onClick={() => markRead(item.id, false)}
+                      onClick={() => handleMarkAsUnread(item.id)}
+                      loading={loadingStates[item.id] === "unread"}
                     >
                       Mark unread
                     </Button>
@@ -127,7 +195,8 @@ export default function Notifications() {
                       size="small"
                       type="primary"
                       style={{ background: "#111827" }}
-                      onClick={() => markRead(item.id, true)}
+                      onClick={() => handleMarkAsRead(item.id)}
+                      loading={loadingStates[item.id] === "read"}
                     >
                       Mark read
                     </Button>
@@ -136,7 +205,7 @@ export default function Notifications() {
               </div>
             )}
           />
-          {items.length === 0 && (
+          {!isLoading && items.length === 0 && (
             <div className="text-center text-gray-500 py-10">
               No notifications
             </div>
