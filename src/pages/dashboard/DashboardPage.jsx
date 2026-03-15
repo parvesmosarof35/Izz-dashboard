@@ -22,7 +22,7 @@ function DashboardPage() {
   );
 
   const handleSelect = (year) => {
-    setSelectedYear(year);
+    setSelectedYear(year); // Update the selected year
     setIsOpen(false);
   };
 
@@ -91,7 +91,7 @@ function DashboardPage() {
                   {/* Dropdown List */}
                   {isOpen && (
                     <div className="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-60 overflow-y-auto shadow-lg text-lg">
-                      {years.map((year) => (
+                      {years.reverse().map((year) => (
                         <div
                           key={year}
                           onClick={() => handleSelect(year)}
