@@ -149,7 +149,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
         </Link>
 
         {/* Chat */}
-        <Link to="/chat">
+        {/* <Link to="/chat">
           <li
             className={`flex items-center gap-2 mt-5 cursor-pointer transition-all duration-300 ease-in-out ${
               isActive("/chat")
@@ -160,7 +160,7 @@ const Sidebar = ({ isOpen, toggleSidebar }) => {
             <TbBrandWechat className="w-5 h-5" />
             <p className="text-lg font-semibold">Chat</p>
           </li>
-        </Link>
+        </Link> */}
         <Link to="/reports">
           <li
             className={`flex items-center gap-2 mt-5 cursor-pointer transition-all duration-300 ease-in-out ${
